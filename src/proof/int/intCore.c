@@ -60,6 +60,7 @@ void Inter_ManSetDefaultParams( Inter_ManParams_t * p )
     p->fUseBackward  = 0;     // perform backward interpolation
     p->fUseSeparate  = 0;     // solve each output separately
     p->fUseTwoFrames = 0;     // create OR of two last timeframes
+    p->fUseAllFrames = 0;     // create OR of all timeframes
     p->fDropSatOuts  = 0;     // replace by 1 the solved outputs
     p->fVerbose      = 0;     // print verbose statistics
     p->iFrameMax     =-1;
@@ -147,7 +148,7 @@ clk = Abc_Clock();
         p->pCnfInter = Cnf_Derive( p->pInter, 0 );  
 p->timeCnf += Abc_Clock() - clk;    
         // timeframes
-        p->pFrames = Inter_ManFramesInter( pAig, p->nFrames, pPars->fUseBackward, pPars->fUseTwoFrames );
+        p->pFrames = Inter_ManFramesInter( pAig, p->nFrames, pPars->fUseBackward, pPars->fUseTwoFrames, pPars->fUseAllFrames );
 clk = Abc_Clock();
         if ( pPars->fRewrite )
         {

@@ -44,15 +44,17 @@ ABC_NAMESPACE_IMPL_START
   SeeAlso     []
 
 ***********************************************************************/
-Aig_Man_t * Inter_ManFramesInter( Aig_Man_t * pAig, int nFrames, int fAddRegOuts, int fUseTwoFrames )
+Aig_Man_t * Inter_ManFramesInter( Aig_Man_t * pAig, int nFrames, int fAddRegOuts, int fUseTwoFrames, int fUseAllFrames )
 {
     Aig_Man_t * pFrames;
     Aig_Obj_t * pObj, * pObjLi, * pObjLo;
     Aig_Obj_t * pLastPo = NULL;
+    Vec_Ptr_t * vPos;
     int i, f;
     assert( Saig_ManRegNum(pAig) > 0 );
     assert( Saig_ManPoNum(pAig)-Saig_ManConstrNum(pAig) == 1 );
     pFrames = Aig_ManStart( Aig_ManNodeNum(pAig) * nFrames );
+    vPos = Vec_PtrAlloc( nFrames );
     // map the constant node
     Aig_ManConst1(pAig)->pData = Aig_ManConst1( pFrames );
     // create variables for register outputs
@@ -82,11 +84,11 @@ Aig_Man_t * Inter_ManFramesInter( Aig_Man_t * pAig, int nFrames, int fAddRegOuts
                 continue;
             Aig_ObjCreateCo( pFrames, Aig_Not( Aig_ObjChild0Copy(pObj) ) );
         }
-        if ( f == nFrames - 1 )
-            break;
         // remember the last PO
         pObj = Aig_ManCo( pAig, 0 );
-        pLastPo = Aig_ObjChild0Copy(pObj);
+        Vec_PtrPush( vPos, Aig_ObjChild0Copy(pObj) );
+        if ( f == nFrames - 1 )
+            break;
         // save register inputs
         Saig_ManForEachLi( pAig, pObj, i )
             pObj->pData = Aig_ObjChild0Copy(pObj);
@@ -103,14 +105,27 @@ Aig_Man_t * Inter_ManFramesInter( Aig_Man_t * pAig, int nFrames, int fAddRegOuts
     // create the only PO of the manager
     else
     {
-        pObj = Aig_ManCo( pAig, 0 );
-        // add the last PO
-        if ( pLastPo == NULL || !fUseTwoFrames )
-            pLastPo = Aig_ObjChild0Copy(pObj);
+        // take the disjunction of POs
+        if ( fUseAllFrames )
+        {
+          Vec_PtrForEachEntry( Aig_Obj_t *, vPos, pObj, i )
+          {
+            if ( pLastPo == NULL )
+                pLastPo = pObj;
+            else
+                pLastPo = Aig_Or( pFrames, pLastPo, pObj );
+          }
+        }
+        // only use the last one or two POs
         else
-            pLastPo = Aig_Or( pFrames, pLastPo, Aig_ObjChild0Copy(pObj) );
+        {
+            pLastPo = Vec_PtrEntryLast(vPos);
+            if ( fUseTwoFrames && Vec_PtrSize( vPos ) >= 2 )
+              pLastPo = Aig_Or( pFrames, pLastPo, Vec_PtrEntry(vPos, Vec_PtrSize(vPos) - 2) );
+        }
         Aig_ObjCreateCo( pFrames, pLastPo );
     }
+    Vec_PtrFree(vPos);
     Aig_ManCleanup( pFrames );
     return pFrames;
 }
