@@ -19,6 +19,8 @@
 ***********************************************************************/
 
 #include "bbr.h"
+#include "base/abc/abc.h"
+#include "base/io/ioAbc.h"
 
 ABC_NAMESPACE_IMPL_START
 
@@ -49,15 +51,17 @@ extern Abc_Cex_t * Aig_ManVerifyUsingBddsCountExample( Aig_Man_t * p, DdManager 
 void Bbr_ManSetDefaultParams( Saig_ParBbr_t * p )
 {
     memset( p, 0, sizeof(Saig_ParBbr_t) );
-    p->TimeLimit     =     0;
-    p->nBddMax       = 50000;
-    p->nIterMax      =  1000;
-    p->fPartition    =     1;
-    p->fReorder      =     1;
-    p->fReorderImage =     1;
-    p->fVerbose      =     0;
-    p->fSilent       =     0;
-    p->iFrame        =    -1;
+    p->TimeLimit     =           0;
+    p->nBddMax       =       50000;
+    p->nIterMax      =        1000;
+    p->fPartition    =           1;
+    p->fReorder      =           1;
+    p->fReorderImage =           1;
+    p->fVerbose      =           0;
+    p->fSilent       =           0;
+    p->fDumpInvar    =           0;
+    p->pFileName     = "invar.aig";
+    p->iFrame        =          -1;
 }
 
 /**Function********************************************************************
@@ -244,6 +248,8 @@ int Aig_ManComputeReachable( DdManager * dd, Aig_Man_t * p, DdNode ** pbParts, D
     DdNode * bCurrent;
     DdNode * bNext = NULL; // Suppress "might be used uninitialized"
     DdNode * bTemp;
+    Abc_Ntk_t * pNtk;
+    Vec_Ptr_t * vNames;
     Cudd_ReorderingType method;
     int i, nIters, nBddSize = 0, status;
     int nThreshold = 10000;
@@ -405,6 +411,19 @@ int Aig_ManComputeReachable( DdManager * dd, Aig_Man_t * p, DdNode ** pbParts, D
             fprintf( stdout, "Reachability analysis completed after %d frames.\n", nIters );
         fprintf( stdout, "Reachable states = %.0f. (Ratio = %.4f %%)\n", nMints, 100.0*nMints/pow(2.0, Saig_ManRegNum(p)) );
         fflush( stdout );
+    }
+    if ( pPars->fDumpInvar && pPars->pFileName != NULL )
+    {
+        clk = Abc_Clock();
+        vNames = Abc_NodeGetFakeNames( Saig_ManCiNum(p) );
+        pNtk = Abc_NtkDeriveFromBdd( dd, bReached, "out", vNames );
+        Abc_NodeFreeNames( vNames );
+        assert(Abc_NtkBddToSop( pNtk, -1, ABC_INFINITY, 1 ));
+        pNtk = Abc_NtkStrash( pNtk, 0, 0, 0 );
+        Io_WriteAiger( pNtk, pPars->pFileName, 0, 0, 0 );
+        Abc_NtkDelete( pNtk );
+        printf( "Inductive invariant is dumped into file \"%s\".\n", pPars->pFileName );
+        ABC_PRT( "Invariant Time", Abc_Clock() - clk );
     }
 //ABC_PRB( dd, bReached );
     Cudd_RecursiveDeref( dd, bReached );

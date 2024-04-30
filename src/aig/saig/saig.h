@@ -62,6 +62,8 @@ struct Saig_ParBbr_t_
     int         fVerbose;
     int         fSilent;
     int         fSkipOutCheck;// skip output checking
+    int         fDumpInvar;   // dump inductive invariant into file
+    char *      pFileName;    // aig file to store reachable states
     int         iFrame;       // explored up to this frame
 };
 

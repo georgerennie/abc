@@ -12124,7 +12124,7 @@ int Abc_CommandReach( Abc_Frame_t * pAbc, int argc, char ** argv )
     // set defaults
     Bbr_ManSetDefaultParams( pPars );
     Extra_UtilGetoptReset();
-    while ( ( c = Extra_UtilGetopt( argc, argv, "TBFLproyvh" ) ) != EOF )
+    while ( ( c = Extra_UtilGetopt( argc, argv, "TBFLIiproyvh" ) ) != EOF )
     {
         switch ( c )
         {
@@ -12169,6 +12169,18 @@ int Abc_CommandReach( Abc_Frame_t * pAbc, int argc, char ** argv )
             }
             pLogFileName = argv[globalUtilOptind];
             globalUtilOptind++;
+            break;
+        case 'I':
+            if ( globalUtilOptind >= argc )
+            {
+                Abc_Print( -1, "Command line switch \"-I\" should be followed by a file name.\n" );
+                goto usage;
+            }
+            pPars->pFileName = argv[globalUtilOptind];
+            globalUtilOptind++;
+            break;
+        case 'i':
+            pPars->fDumpInvar ^= 1;
             break;
         case 'p':
             pPars->fPartition ^= 1;
@@ -12219,12 +12231,14 @@ int Abc_CommandReach( Abc_Frame_t * pAbc, int argc, char ** argv )
     return 0;
 
 usage:
-    Abc_Print( -2, "usage: reach [-TBF num] [-L file] [-proyvh]\n" );
+    Abc_Print( -2, "usage: reach [-TBF num] [-LI file] [-iproyvh]\n" );
     Abc_Print( -2, "\t         verifies sequential miter using BDD-based reachability\n" );
     Abc_Print( -2, "\t-T num : approximate time limit in seconds (0=infinite) [default = %d]\n", pPars->TimeLimit );
     Abc_Print( -2, "\t-B num : max number of nodes in the intermediate BDDs [default = %d]\n", pPars->nBddMax );
     Abc_Print( -2, "\t-F num : max number of reachability iterations [default = %d]\n", pPars->nIterMax );
     Abc_Print( -2, "\t-L file: the log file name [default = %s]\n", pLogFileName ? pLogFileName : "no logging" );
+    Abc_Print( -2, "\t-I file: the file name for dumping invariant [default = %s]\n", pPars->pFileName);
+    Abc_Print( -2, "\t-i     : toggle dumping invariant into a file [default = %s]\n", pPars->fDumpInvar? "yes": "no" );
     Abc_Print( -2, "\t-p     : enable partitioned image computation [default = %s]\n", pPars->fPartition? "yes": "no" );
     Abc_Print( -2, "\t-r     : enable dynamic BDD variable reordering [default = %s]\n", pPars->fReorder? "yes": "no" );
     Abc_Print( -2, "\t-o     : toggles BDD variable reordering during image computation [default = %s]\n", pPars->fReorderImage? "yes": "no" );
