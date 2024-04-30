@@ -418,7 +418,7 @@ int Aig_ManComputeReachable( DdManager * dd, Aig_Man_t * p, DdNode ** pbParts, D
         vNames = Abc_NodeGetFakeNames( Saig_ManCiNum(p) );
         pNtk = Abc_NtkDeriveFromBdd( dd, bReached, "out", vNames );
         Abc_NodeFreeNames( vNames );
-        assert(Abc_NtkBddToSop( pNtk, -1, ABC_INFINITY, 1 ));
+        assert(Abc_NtkBddToSop( pNtk, 1, ABC_INFINITY, 1 ));
         pNtk = Abc_NtkStrash( pNtk, 0, 0, 0 );
         Io_WriteAiger( pNtk, pPars->pFileName, 0, 0, 0 );
         Abc_NtkDelete( pNtk );
